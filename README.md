@@ -24,9 +24,9 @@ $ omg run findSpreadsheet -a spreadsheetId=<SHEET_ID> -e KEY=<BASE64_DATA_OF_KEY
 ```sh
 $ omg run addSheet -a spreadsheetId=<SHEET_ID> -a sheetTitle=<SHEET_TITLE> -e KEY=<BASE64_DATA_OF_KEY_FILE>
 ```
-##### Send Message By Topic
+##### Find Sheet
 ```sh
-$ omg run sendMessageByTopic -a token=<TOKEN> -a topic=<TOPIC> -a body=<NOTIFICATION_BODY> -a icon=<NOTIFICATION_ICON> -a data=<DATA_OBJECT>  -e SERVER_KEY=<SERVER_KEY>
+$ omg run findSheet -a spreadsheetId=<SHEET_ID> -a sheetTitle=<SHEET_TITLE>/ -a sheetIndex=<SHEET_INDEX> -a sheetId=<SHEET_ID> -e KEY=<BASE64_DATA_OF_KEY_FILE>
 ```
 
 **Note**: the OMG CLI requires [Docker](https://docs.docker.com/install/) to be installed.
