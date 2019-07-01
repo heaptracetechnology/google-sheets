@@ -3,7 +3,6 @@ package spreadsheet
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"github.com/heaptracetechnology/google-sheets/result"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
@@ -20,6 +19,8 @@ type ArgsData struct {
 	SheetID    int    `json:"sheetId"`
 	SheetIndex int    `json:"sheetIndex"`
 	SheetTitle string `json:"sheetTitle"`
+	Row        int    `json:"row"`
+	Column     int    `json:"column"`
 }
 
 type Message struct {
@@ -152,11 +153,6 @@ func AddSheet(responseWriter http.ResponseWriter, request *http.Request) {
 	var sheetProperties spreadsheet.SheetProperties
 	sheetProperties.Title = argsdata.Title
 
-	fmt.Println("sheetProperties :::", sheetProperties)
-
-	res, _ := json.Marshal(sheetProperties)
-	fmt.Println("Response ::", string(res))
-
 	sheetErr := service.AddSheet(&currentSpreadsheet, sheetProperties)
 	if sheetErr != nil {
 		message := Message{false, sheetErr.Error(), http.StatusBadRequest}
@@ -188,7 +184,6 @@ func FindSheet(responseWriter http.ResponseWriter, request *http.Request) {
 		result.WriteErrorResponse(responseWriter, er)
 		return
 	}
-	fmt.Println("argsdata.SheetIndex ::", argsdata.SheetIndex)
 
 	if argsdata.SheetID < 0 && argsdata.SheetIndex < 0 && argsdata.SheetTitle == "" {
 		message := Message{false, "Please provide valid data", http.StatusBadRequest}
@@ -227,5 +222,57 @@ func FindSheet(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	bytes, _ := json.Marshal(sheet)
+	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
+}
+
+//ExpandSheet func
+func ExpandSheet(responseWriter http.ResponseWriter, request *http.Request) {
+
+	var key = os.Getenv("KEY")
+
+	body, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		result.WriteErrorResponse(responseWriter, err)
+		return
+	}
+	defer request.Body.Close()
+
+	var argsdata ArgsData
+	er := json.Unmarshal(body, &argsdata)
+	if er != nil {
+		result.WriteErrorResponse(responseWriter, er)
+		return
+	}
+
+	decodedJSON, decodeErr := base64.StdEncoding.DecodeString(key)
+	if decodeErr != nil {
+		result.WriteErrorResponse(responseWriter, decodeErr)
+		return
+	}
+	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
+	if confErr != nil {
+		result.WriteErrorResponse(responseWriter, confErr)
+		return
+	}
+	client := conf.Client(context.TODO())
+
+	service := spreadsheet.NewServiceWithClient(client)
+
+	currentSpreadsheet, err := service.FetchSpreadsheet(argsdata.ID)
+
+	sheet, sheetErr := currentSpreadsheet.SheetByTitle(argsdata.SheetTitle)
+	if sheetErr != nil {
+		result.WriteErrorResponse(responseWriter, sheetErr)
+		return
+	}
+
+	expandErr := service.ExpandSheet(sheet, uint(argsdata.Row), uint(argsdata.Column))
+	if expandErr != nil {
+		result.WriteErrorResponse(responseWriter, expandErr)
+		return
+	}
+
+	message := Message{true, "Sheet expanded successfully", http.StatusOK}
+	bytes, _ := json.Marshal(message)
 	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
 }

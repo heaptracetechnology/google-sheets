@@ -41,6 +41,12 @@ var routes = Routes{
         "/addSheet",
         spreadsheet.AddSheet,
     },
+    Route{
+        "ExpandSheet",
+        "POST",
+        "/expandSheet",
+        spreadsheet.ExpandSheet,
+    },
 }
 
 func NewRouter() *mux.Router {

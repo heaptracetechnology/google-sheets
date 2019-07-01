@@ -132,6 +132,47 @@ actions:
         statusCode:
           help: HTTP status code.
           type: int
+  expandSheet:
+    help: Expand sheets row and column.
+    http:
+      port: 3000
+      method: post
+      path: /expandSheet
+      contentType: application/json
+    arguments:
+      spreadsheetId:
+        type: string
+        in: requestBody
+        required: true
+        help: The ID of spreadsheet.
+      sheetTitle: 
+        type: string
+        in: requestBody
+        required: true
+        help: The title of spreadsheet.
+      row: 
+        type: int
+        in: requestBody
+        required: true
+        help: The title of spreadsheet.
+      column: 
+        type: int
+        in: requestBody
+        required: true
+        help: The title of spreadsheet.
+    output:
+      type: object
+      contentType: application/json
+      properties:
+        success:
+          help: Returns success status.
+          type: boolean
+        message:
+          help: Success message or error if any occurred.
+          type: string
+        statusCode:
+          help: HTTP status code.
+          type: int
 environment:
   KEY:
     type: string

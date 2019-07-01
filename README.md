@@ -28,6 +28,10 @@ $ omg run addSheet -a spreadsheetId=<SHEET_ID> -a sheetTitle=<SHEET_TITLE> -e KE
 ```shell
 $ omg run findSheet -a spreadsheetId=<SHEET_ID> -a sheetTitle=<SHEET_TITLE>/ -a sheetIndex=<SHEET_INDEX>/ -a sheetId=<SHEET_ID> -e KEY=<BASE64_DATA_OF_KEY_FILE>
 ```
+##### Expand Sheet
+```shell
+$ omg run expandSheet -a spreadsheetId=<SHEET_ID> -a sheetTitle=<SHEET_TITLE> -a row=<EXPAND_ROW> -a column=<EXPAND_COLUMN> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+```
 
 **Note**: the OMG CLI requires [Docker](https://docs.docker.com/install/) to be installed.
 
