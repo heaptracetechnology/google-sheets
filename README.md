@@ -26,7 +26,7 @@ $ omg run addSheet -a spreadsheetId=<SHEET_ID> -a sheetTitle=<SHEET_TITLE> -e KE
 ```
 ##### Find Sheet
 ```sh
-$ omg run findSheet -a spreadsheetId=<SHEET_ID> -a sheetTitle=<SHEET_TITLE>/ -a sheetIndex=<SHEET_INDEX> -a sheetId=<SHEET_ID> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run findSheet -a spreadsheetId=<SHEET_ID> -a sheetTitle=<SHEET_TITLE>/ -a sheetIndex=<SHEET_INDEX>/ -a sheetId=<SHEET_ID> -e KEY=<BASE64_DATA_OF_KEY_FILE>
 ```
 
 **Note**: the OMG CLI requires [Docker](https://docs.docker.com/install/) to be installed.
