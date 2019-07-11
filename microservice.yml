@@ -74,26 +74,29 @@ actions:
       path: /addSheet
       contentType: application/json
     arguments:
-      spreadsheetId: 
+      spreadsheetId:
         type: string
         in: requestBody
         required: true
         help: The ID of spreadsheet.
-      sheetTitle: 
+      sheetTitle:
         type: string
         in: requestBody
         required: true
         help: The title for sheet.
     output:
-      type: string
+      type: object
       contentType: application/json
       properties:
-        properties:
-          help: Spreadsheet properties.
-          type: object
-        data:
-          help: List of sheet properties, tabColor and data.
-          type: list
+        success:
+          help: Returns success status.
+          type: boolean
+        message:
+          help: Success message or error if any occurred.
+          type: string
+        statusCode:
+          help: HTTP status code.
+          type: int
   findSheet:
     help: Get sheet by ID, Index or Title.
     http:
@@ -132,12 +135,12 @@ actions:
         statusCode:
           help: HTTP status code.
           type: int
-  expandSheet:
+  updateSheetSize:
     help: Expand sheets row and column.
     http:
       port: 3000
       method: post
-      path: /expandSheet
+      path: /updateSheetSize
       contentType: application/json
     arguments:
       spreadsheetId:
@@ -154,12 +157,130 @@ actions:
         type: int
         in: requestBody
         required: true
-        help: The title of spreadsheet.
+        help: The number of rows to add in sheet.
       column: 
         type: int
         in: requestBody
         required: true
+        help: The The number of columns to add in sheet.
+    output:
+      type: object
+      contentType: application/json
+      properties:
+        success:
+          help: Returns success status.
+          type: boolean
+        message:
+          help: Success message or error if any occurred.
+          type: string
+        statusCode:
+          help: HTTP status code.
+          type: int
+  updateCell:
+    help: Update sheet content.
+    http:
+      port: 3000
+      method: post
+      path: /updateCell
+      contentType: application/json
+    arguments:
+      spreadsheetId:
+        type: string
+        in: requestBody
+        required: true
+        help: The ID of spreadsheet.
+      sheetTitle: 
+        type: string
+        in: requestBody
+        required: true
         help: The title of spreadsheet.
+      row: 
+        type: int
+        in: requestBody
+        required: true
+        help: The row number of sheet (value starts from 1).
+      column: 
+        type: int
+        in: requestBody
+        required: true
+        help: The column number of sheet (value starts from 1).
+      content: 
+        type: string
+        in: requestBody
+        required: true
+        help: The content to update on cell of sheet.
+    output:
+      type: object
+      contentType: application/json
+      properties:
+        success:
+          help: Returns success status.
+          type: boolean
+        message:
+          help: Success message or error if any occurred.
+          type: string
+        statusCode:
+          help: HTTP status code.
+          type: int
+  getCell:
+    help: Update sheet content.
+    http:
+      port: 3000
+      method: post
+      path: /getCell
+      contentType: application/json
+    arguments:
+      spreadsheetId:
+        type: string
+        in: requestBody
+        required: true
+        help: The ID of spreadsheet.
+      sheetTitle: 
+        type: string
+        in: requestBody
+        required: true
+        help: The title of spreadsheet.
+      row: 
+        type: int
+        in: requestBody
+        required: true
+        help: The row number of sheet (value starts from 1).
+      column: 
+        type: int
+        in: requestBody
+        required: true
+        help: The column number of sheet (value starts from 1).
+    output:
+      type: object
+      contentType: application/json
+      properties:
+        success:
+          help: Returns success status.
+          type: boolean
+        message:
+          help: Success message or error if any occurred.
+          type: string
+        statusCode:
+          help: HTTP status code.
+          type: int
+  deleteSheet:
+    help: Delete sheet.
+    http:
+      port: 3000
+      method: post
+      path: /deleteSheet
+      contentType: application/json
+    arguments:
+      spreadsheetId:
+        type: string
+        in: requestBody
+        required: true
+        help: The ID of spreadsheet.
+      sheetId:
+        type: int
+        in: requestBody
+        required: true
+        help: The ID of sheet to delete (To delete first sheet ID will be 0).
     output:
       type: object
       contentType: application/json

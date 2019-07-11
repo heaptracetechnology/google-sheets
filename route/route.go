@@ -7,6 +7,7 @@ import (
     "net/http"
 )
 
+//Route struct
 type Route struct {
     Name        string
     Method      string
@@ -14,6 +15,7 @@ type Route struct {
     HandlerFunc http.HandlerFunc
 }
 
+//Routes list
 type Routes []Route
 
 var routes = Routes{
@@ -42,13 +44,32 @@ var routes = Routes{
         spreadsheet.AddSheet,
     },
     Route{
-        "ExpandSheet",
+        "UpdateSheetSize",
         "POST",
-        "/expandSheet",
-        spreadsheet.ExpandSheet,
+        "/updateSheetSize",
+        spreadsheet.UpdateSheetSize,
+    },
+    Route{
+        "UpdateCell",
+        "POST",
+        "/updateCell",
+        spreadsheet.UpdateCell,
+    },
+    Route{
+        "DeleteSheet",
+        "POST",
+        "/deleteSheet",
+        spreadsheet.DeleteSheet,
+    },
+    Route{
+        "GetCell",
+        "POST",
+        "/getCell",
+        spreadsheet.GetCell,
     },
 }
 
+//NewRouter func
 func NewRouter() *mux.Router {
     router := mux.NewRouter().StrictSlash(true)
     for _, route := range routes {
