@@ -26,7 +26,7 @@ actions:
         type: string
         in: requestBody
         required: true
-        help: Title name for spreadsheet.
+        help: Title for new spreadsheet.
     output:   
       type: object
       contentType: application/json
@@ -64,7 +64,7 @@ actions:
           help: Spreadsheet properties.
           type: object
         sheets:
-          help: List of sheet properties, tabColor and data.
+          help: List of all sheet properties, tabColor and data.
           type: list
   addSheet:
     help: Add new sheet in spreadsheet.
@@ -83,7 +83,7 @@ actions:
         type: string
         in: requestBody
         required: true
-        help: The title for sheet.
+        help: The title for new sheet.
     output:
       type: object
       contentType: application/json
@@ -113,15 +113,15 @@ actions:
       sheetId:
         type: int
         in: requestBody
-        help: The ID of spreadsheet.
+        help: The ID of sheet.
       sheetIndex:
         type: int
         in: requestBody
-        help: The index of spreadsheet.
+        help: The index of sheet.
       sheetTitle: 
         type: string
         in: requestBody
-        help: The title of spreadsheet.
+        help: The title of sheet.
     output:
       type: object
       contentType: application/json
@@ -136,7 +136,7 @@ actions:
           help: HTTP status code.
           type: int
   updateSheetSize:
-    help: Expand sheets row and column.
+    help: Update sheets row and column.
     http:
       port: 3000
       method: post
@@ -152,17 +152,17 @@ actions:
         type: string
         in: requestBody
         required: true
-        help: The title of spreadsheet.
+        help: The title of sheet.
       row: 
         type: int
         in: requestBody
         required: true
-        help: The number of rows to add in sheet.
+        help: Update rows in sheet.
       column: 
         type: int
         in: requestBody
         required: true
-        help: The The number of columns to add in sheet.
+        help: Update columns in sheet.
     output:
       type: object
       contentType: application/json
@@ -193,7 +193,7 @@ actions:
         type: string
         in: requestBody
         required: true
-        help: The title of spreadsheet.
+        help: The title of sheet.
       row: 
         type: int
         in: requestBody
@@ -223,7 +223,7 @@ actions:
           help: HTTP status code.
           type: int
   getCell:
-    help: Update sheet content.
+    help: Get sheet content.
     http:
       port: 3000
       method: post
@@ -239,7 +239,7 @@ actions:
         type: string
         in: requestBody
         required: true
-        help: The title of spreadsheet.
+        help: The title of sheet.
       row: 
         type: int
         in: requestBody
