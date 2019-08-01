@@ -1,6 +1,8 @@
 # _Google Sheets_ OMG Microservice
 
 [![Open Microservice Guide](https://img.shields.io/badge/OMG%20Enabled-👍-green.svg?)](https://microservice.guide)
+[![Build Status](https://travis-ci.com/omg-services/google-sheets.svg?branch=master)](https://travis-ci.com/omg-services/google-sheets)
+[![codecov](https://codecov.io/gh/omg-services/google-sheets/branch/master/graph/badge.svg)](https://codecov.io/gh/omg-services/google-sheets)
 
 An OMG service for Google Sheets, it is for organization, analysis and storage of data in tabular form. Spreadsheets developed as computerized analogs of paper accounting worksheets.
 
