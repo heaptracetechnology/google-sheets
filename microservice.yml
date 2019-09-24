@@ -65,16 +65,6 @@ actions:
     output:   
       type: map
       contentType: application/json
-      # properties:
-      #   spreadsheetId:
-      #     help: Google spreadsheet ID.
-      #     type: string
-      #   properties:
-      #     help: Spreadsheet properties.
-      #     type: object
-      #   sheets:
-      #     help: List of all sheet properties, tabColor and data.
-      #     type: list
   addSheet:
     help: Add new sheet in spreadsheet.
     http:
@@ -97,7 +87,7 @@ actions:
       type: map
       contentType: application/json
   findSheet:
-    help: Get sheet by ID, Index or Title.
+    help: Get sheet by sheet title.
     http:
       port: 3000
       method: post
@@ -117,16 +107,6 @@ actions:
     output:
       type: map
       contentType: application/json
-      # properties:
-      #   success:
-      #     help: Returns success status.
-      #     type: boolean
-      #   message:
-      #     help: Success message or error if any occurred.
-      #     type: string
-      #   statusCode:
-      #     help: HTTP status code.
-      #     type: int
   updateSheetSize:
     help: Update sheets row and column.
     http:
@@ -149,12 +129,12 @@ actions:
         type: int
         in: requestBody
         required: true
-        help: Update rows in sheet.
+        help: Length of rows to add in sheet.
       column: 
         type: int
         in: requestBody
         required: true
-        help: Update columns in sheet.
+        help: Length of columns to add in sheet.
     output:
       type: map
       contentType: application/json
@@ -180,7 +160,7 @@ actions:
         type: string
         in: requestBody
         required: true
-        help: Update rows in sheet.
+        help: The cell number eg - A1.
       content: 
         type: string
         in: requestBody
@@ -206,7 +186,7 @@ actions:
         type: int
         in: requestBody
         required: true
-        help: The ID of sheet to delete (To delete first sheet ID will be 0).
+        help: The ID of sheet to delete (To delete first sheet use ID 0).
     output:
       type: map
       contentType: application/json
@@ -228,12 +208,12 @@ actions:
             type: string
             in: requestBody
             required: true
-            help: The board ID to subscribe.
+            help: The spreadsheet ID to subscribe.
           sheetTitle:
             type: string
             in: requestBody
             required: true
-            help: The list ID to subscribe the list.
+            help: The title of sheet to subscribe.
         output:
           contentType: application/json
           type: map
