@@ -1,4 +1,4 @@
-package spreadsheet
+package spreadsheets
 
 import (
 	. "github.com/onsi/ginkgo"

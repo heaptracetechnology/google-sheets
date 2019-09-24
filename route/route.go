@@ -20,6 +20,18 @@ type Routes []Route
 
 var routes = Routes{
     Route{
+        "HealthCheck",
+        "GET",
+        "/health",
+        spreadsheet.HealthCheck,
+    },
+    Route{
+        "SheetSubscribe",
+        "POST",
+        "/subscribe",
+        spreadsheet.SheetSubscribe,
+    },
+    Route{
         "CreateSpreadsheet",
         "POST",
         "/createSpreadsheet",
@@ -60,12 +72,6 @@ var routes = Routes{
         "POST",
         "/deleteSheet",
         spreadsheet.DeleteSheet,
-    },
-    Route{
-        "GetCell",
-        "POST",
-        "/getCell",
-        spreadsheet.GetCell,
     },
 }
 

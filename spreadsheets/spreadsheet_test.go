@@ -1,8 +1,9 @@
-package spreadsheet
+package spreadsheets
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"log"
@@ -20,6 +21,11 @@ var (
 	updateSheetRow          = os.Getenv("GOOGLE_SHEET_ROW")
 	updateSheetColumn       = os.Getenv("GOOGLE_SHEET_COLUMN")
 	updateContentSheetTitle = os.Getenv("GOOGLE_SHEET_UPDATE_CONTENT_SHEET_TITLE")
+	emailAddress            = os.Getenv("GOOGLE_SHEET_DRIVE_PERMISSION_EMAIL_ADDRESS")
+	role                    = os.Getenv("GOOGLE_SHEET_DRIVE_ROLE")
+	accessType              = os.Getenv("GOOGLE_SHEET_DRIVE_TYPE")
+	cellNumber              = os.Getenv("GOOGLE_SHEET_CELL_NUMBER")
+	cellContent             = os.Getenv("GOOGLE_SHEET_CELL_CONTENT")
 )
 
 var _ = Describe("Create Spreadsheet with invalid base64 KEY", func() {
@@ -83,7 +89,7 @@ var _ = Describe("Create Spreadsheet with valid params", func() {
 
 	os.Setenv("KEY", key)
 
-	sheet := ArgsData{Title: spreadsheetTitle}
+	sheet := ArgsData{Title: spreadsheetTitle, EmailAddress: "demot636@gmail.com", Role: "writer", Type: "user"}
 	requestBody := new(bytes.Buffer)
 	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
 	if jsonErr != nil {
@@ -223,7 +229,7 @@ var _ = Describe("Add Sheet with invalid base64 KEY", func() {
 
 	os.Setenv("KEY", "mockKey")
 
-	sheet := ArgsData{ID: spreadsheetID, SheetTitle: spreadsheetTitle}
+	sheet := ArgsData{ID: spreadsheetID, SheetTitle: addsheettitle}
 	requestBody := new(bytes.Buffer)
 	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
 	if jsonErr != nil {
@@ -325,7 +331,7 @@ var _ = Describe("Add Sheet with valid params", func() {
 	Describe("Add Sheet", func() {
 		Context("add sheet", func() {
 			It("Should result http.StatusOK", func() {
-				Expect(http.StatusOK).To(Equal(recorder.Code))
+				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
 			})
 		})
 	})
@@ -559,8 +565,8 @@ var _ = Describe("Update sheet size with valid params", func() {
 
 	os.Setenv("KEY", key)
 
-	row, _ := strconv.Atoi(updateSheetRow)
-	column, _ := strconv.Atoi(updateSheetColumn)
+	row, _ := strconv.ParseInt(updateSheetRow, 10, 64)
+	column, _ := strconv.ParseInt(updateSheetColumn, 10, 64)
 
 	sheet := ArgsData{ID: spreadsheetID, SheetTitle: addsheettitle, Row: row, Column: column}
 	requestBody := new(bytes.Buffer)
@@ -614,7 +620,7 @@ var _ = Describe("Delete sheet invalid param", func() {
 	})
 })
 
-var _ = Describe("Update sheet size with invalid base64 KEY", func() {
+var _ = Describe("Delete sheet with invalid base64 KEY", func() {
 
 	os.Setenv("KEY", "mockKey")
 
@@ -642,151 +648,11 @@ var _ = Describe("Update sheet size with invalid base64 KEY", func() {
 	})
 })
 
-var _ = Describe("Update sheet size with invalid spreadsheet ID", func() {
+var _ = Describe("Delete sheet with invalid spreadsheet ID", func() {
 
 	os.Setenv("KEY", key)
 
 	sheet := ArgsData{ID: "mockSpreadsheetID"}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/deleteSheet", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(DeleteSheet)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Delete sheet", func() {
-		Context("delete sheet", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Delete sheet with valid params", func() {
-
-	os.Setenv("KEY", key)
-
-	sheet := ArgsData{ID: spreadsheetID, SheetID: 2019}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/deleteSheet", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(DeleteSheet)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Delete sheet", func() {
-		Context("delete sheet", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Delete sheet invalid param", func() {
-
-	os.Setenv("KEY", key)
-
-	sheet := []byte(`{"status":false}`)
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/deleteSheet", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(DeleteSheet)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Delete sheet", func() {
-		Context("delete sheet", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Update sheet size with invalid base64 KEY", func() {
-
-	os.Setenv("KEY", "mockKey")
-
-	sheet := ArgsData{ID: spreadsheetID}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/deleteSheet", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(DeleteSheet)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Delete sheet", func() {
-		Context("delete sheet", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Update sheet size with invalid spreadsheet ID", func() {
-
-	os.Setenv("KEY", key)
-
-	sheet := ArgsData{ID: "mockSpreadsheetID"}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/deleteSheet", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(DeleteSheet)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Delete sheet", func() {
-		Context("delete sheet", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Delete sheet with valid params", func() {
-
-	os.Setenv("KEY", key)
-
-	sheet := ArgsData{ID: spreadsheetID, SheetID: 2019}
 	requestBody := new(bytes.Buffer)
 	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
 	if jsonErr != nil {
@@ -866,67 +732,13 @@ var _ = Describe("Update cell with invalid base64 KEY", func() {
 	})
 })
 
-var _ = Describe("Update sheet size with invalid spreadsheet ID", func() {
-
-	os.Setenv("KEY", key)
-
-	sheet := ArgsData{ID: "mockSpreadsheetID"}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/updateCell", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(UpdateCell)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Update cell", func() {
-		Context("update cell", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Update sheet size with invalid spreadsheet ID", func() {
-
-	os.Setenv("KEY", key)
-
-	sheet := ArgsData{ID: "mockSpreadsheetID", SheetTitle: "mockTempTitle"}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/updateCell", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(UpdateCell)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Update cell", func() {
-		Context("update cell", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
+//-------------------------------------------------------------------------------------------------
 
 var _ = Describe("Update cell with valid params", func() {
 
 	os.Setenv("KEY", key)
 
-	sheet := ArgsData{ID: spreadsheetID, SheetTitle: updateContentSheetTitle, Row: 2, Column: 3, Content: "Test content"}
+	sheet := ArgsData{ID: spreadsheetID, SheetTitle: addsheettitle, CellNumber: cellNumber, Content: cellContent}
 	requestBody := new(bytes.Buffer)
 	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
 	if jsonErr != nil {
@@ -950,112 +762,32 @@ var _ = Describe("Update cell with valid params", func() {
 	})
 })
 
-var _ = Describe("Get cell invalid param", func() {
+var _ = Describe("Subscribe google sheet for new row update", func() {
 
 	os.Setenv("KEY", key)
 
-	sheet := []byte(`{"status":false}`)
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
+	data := RequestParam{SpreadsheetID: spreadsheetID, SheetTitle: addsheettitle}
+	sub := Subscribe{Endpoint: "https://webhook.site/3cee781d-0a87-4966-bdec-9635436294e9",
+		ID:        "1",
+		IsTesting: true,
+		Data:      data,
 	}
-
-	request, err := http.NewRequest("POST", "/getCell", requestBody)
+	requestBody := new(bytes.Buffer)
+	err := json.NewEncoder(requestBody).Encode(sub)
+	if err != nil {
+		fmt.Println(" request err :", err)
+	}
+	req, err := http.NewRequest("POST", "/subscribe", requestBody)
 	if err != nil {
 		log.Fatal(err)
 	}
 	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(GetCell)
-	handler.ServeHTTP(recorder, request)
+	handler := http.HandlerFunc(SheetSubscribe)
+	handler.ServeHTTP(recorder, req)
 
-	Describe("Get cell", func() {
-		Context("get cell", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Get cell with invalid base64 KEY", func() {
-
-	os.Setenv("KEY", "mockKey")
-
-	sheet := ArgsData{ID: spreadsheetID}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/getCell", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(GetCell)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Get cell", func() {
-		Context("get cell", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Get Cell with invalid spreadsheet ID", func() {
-
-	os.Setenv("KEY", key)
-
-	sheet := ArgsData{ID: "mockSpreadsheetID"}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/getCell", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(GetCell)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Get cell", func() {
-		Context("get cell", func() {
-			It("Should result http.StatusBadRequest", func() {
-				Expect(http.StatusBadRequest).To(Equal(recorder.Code))
-			})
-		})
-	})
-})
-
-var _ = Describe("Get cell with valid params", func() {
-
-	os.Setenv("KEY", key)
-
-	sheet := ArgsData{ID: spreadsheetID, SheetTitle: updateContentSheetTitle, Row: 2, Column: 3}
-	requestBody := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	request, err := http.NewRequest("POST", "/getCell", requestBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(GetCell)
-	handler.ServeHTTP(recorder, request)
-
-	Describe("Get cell", func() {
-		Context("get cell", func() {
-			It("Should result http.StatusStatusOK", func() {
+	Describe("Subscribe", func() {
+		Context("Subscribe", func() {
+			It("Should result http.StatusOK", func() {
 				Expect(http.StatusOK).To(Equal(recorder.Code))
 			})
 		})

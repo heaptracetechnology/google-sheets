@@ -1,10 +1,12 @@
 FROM golang
 
-RUN go get golang.org/x/net/context
+RUN go get google.golang.org/api/drive/v3
+
+RUN go get google.golang.org/api/sheets/v4
+
+RUN go get github.com/cloudevents/sdk-go
 
 RUN go get golang.org/x/oauth2/google
-
-RUN go get gopkg.in/Iwark/spreadsheet.v2
 
 RUN go get github.com/gorilla/mux
 

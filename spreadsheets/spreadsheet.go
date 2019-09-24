@@ -1,29 +1,67 @@
-package spreadsheet
+package spreadsheets
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudevents/sdk-go"
 	"github.com/heaptracetechnology/google-sheets/result"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
-	"gopkg.in/Iwark/spreadsheet.v2"
+	driveV3 "google.golang.org/api/drive/v3"
+	sheetsV4 "google.golang.org/api/sheets/v4"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
+	//"reflect"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 //ArgsData struct
 type ArgsData struct {
-	Title      string `json:"title"`
-	ID         string `json:"spreadsheetId"`
-	SheetID    int    `json:"sheetId"`
-	SheetIndex int    `json:"sheetIndex"`
-	SheetTitle string `json:"sheetTitle"`
-	Row        int    `json:"row"`
-	Column     int    `json:"column"`
-	Content    string `json:"content"`
-	Start      int    `json:"start"`
-	End        int    `json:"end"`
+	RowLength    *sheetsV4.Request `json:"rowLength"`
+	ColumnLength *sheetsV4.Request `json:"columnLength"`
+	Title        string            `json:"title"`
+	ID           string            `json:"spreadsheetId"`
+	SheetID      int64             `json:"sheetId"`
+	SheetIndex   int               `json:"sheetIndex"`
+	SheetTitle   string            `json:"sheetTitle"`
+	Row          int64             `json:"row"`
+	Column       int64             `json:"column"`
+	Content      string            `json:"content"`
+	Start        int               `json:"start"`
+	End          int               `json:"end"`
+	EmailAddress string            `json:"emailAddress"`
+	Role         string            `json:"role"`
+	Type         string            `json:"type"`
+	CellNumber   string            `json:"cellNumber"`
+}
+
+//Subscribe struct
+type Subscribe struct {
+	Data      RequestParam `json:"data"`
+	Endpoint  string       `json:"endpoint"`
+	ID        string       `json:"id"`
+	IsTesting bool         `json:"istesting"`
+	//LastMessageID uint32
+}
+
+//SubscribeReturn struct
+type SubscribeReturn struct {
+	SpreadsheetID string `json:"spreadsheetID"`
+	SheetTitle    string `json:"sheetTitle"`
+	TwitterCell   string `json:"twitterCell"`
+	EmailAddress  string `json:"emailAddress"`
+}
+
+//RequestParam struct
+type RequestParam struct {
+	SpreadsheetID string `json:"spreadsheetID"`
+	SheetTitle    string `json:"sheetTitle"`
 }
 
 //Message struct
@@ -33,6 +71,30 @@ type Message struct {
 	StatusCode int    `json:"statusCode"`
 }
 
+//SheetScope Spreadsheet
+const (
+	SheetScope = "https://www.googleapis.com/auth/spreadsheets"
+	DriveScope = "https://www.googleapis.com/auth/drive.file"
+)
+
+//Global Variables
+var (
+	Listener        = make(map[string]Subscribe)
+	rtmStarted      bool
+	sheetService    *sheetsV4.Service
+	sheetServiceErr error
+	oldRowCount     int
+	twitterIndex    int
+	subReturn       SubscribeReturn
+)
+
+//HealthCheck Google-Sheets
+func HealthCheck(responseWriter http.ResponseWriter, request *http.Request) {
+
+	bytes, _ := json.Marshal("OK")
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
+}
+
 //CreateSpreadsheet func
 func CreateSpreadsheet(responseWriter http.ResponseWriter, request *http.Request) {
 
@@ -40,7 +102,7 @@ func CreateSpreadsheet(responseWriter http.ResponseWriter, request *http.Request
 
 	decodedJSON, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
-		result.WriteErrorResponse(responseWriter, err)
+		result.WriteErrorResponseString(responseWriter, err.Error())
 		return
 	}
 
@@ -49,27 +111,73 @@ func CreateSpreadsheet(responseWriter http.ResponseWriter, request *http.Request
 	var argsdata ArgsData
 	decodeErr := decoder.Decode(&argsdata)
 	if decodeErr != nil {
-		result.WriteErrorResponse(responseWriter, decodeErr)
+		result.WriteErrorResponseString(responseWriter, decodeErr.Error())
 		return
 	}
 
-	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
-	if confErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
+	sheetConf, sheetConfErr := google.JWTConfigFromJSON(decodedJSON, SheetScope)
+	if sheetConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetConfErr.Error())
 		return
 	}
-	client := conf.Client(context.TODO())
 
-	service := spreadsheet.NewServiceWithClient(client)
+	sheetClient := sheetConf.Client(context.TODO())
 
-	newSpreadsheet, _ := service.CreateSpreadsheet(spreadsheet.Spreadsheet{
-		Properties: spreadsheet.Properties{
+	sheetService, sheetServiceErr := sheetsV4.New(sheetClient)
+	if sheetServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetServiceErr.Error())
+		return
+	}
+
+	sheetProperties := sheetsV4.Spreadsheet{
+		Properties: &sheetsV4.SpreadsheetProperties{
 			Title: argsdata.Title,
 		},
-	})
+	}
 
-	bytes, _ := json.Marshal(newSpreadsheet)
-	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
+	newSpreadsheet := sheetService.Spreadsheets.Create(&sheetProperties)
+	spreadsheet, sheetErr := newSpreadsheet.Do()
+	if sheetErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetErr.Error())
+		return
+	}
+
+	spreadsheetID := spreadsheet.SpreadsheetId
+
+	driveConf, driveConfErr := google.JWTConfigFromJSON(decodedJSON, DriveScope)
+	if driveConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, driveConfErr.Error())
+		return
+	}
+
+	driveClient := driveConf.Client(context.TODO())
+
+	driveService, driveServiceErr := driveV3.New(driveClient)
+	if driveServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, driveServiceErr.Error())
+		return
+	}
+
+	driveProperties := driveV3.Permission{
+		EmailAddress: argsdata.EmailAddress,
+		Role:         argsdata.Role,
+		Type:         argsdata.Type,
+	}
+
+	if spreadsheetID != "" {
+		permission := driveService.Permissions.Create(spreadsheetID, &driveProperties)
+		_, doErr := permission.Do()
+		if doErr != nil {
+			result.WriteErrorResponseString(responseWriter, doErr.Error())
+			return
+		}
+	} else {
+		result.WriteErrorResponseString(responseWriter, "SpreadSheet ID not found")
+		return
+	}
+
+	bytes, _ := json.Marshal(spreadsheet)
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
 }
 
 //FindSpreadsheet func
@@ -91,23 +199,29 @@ func FindSpreadsheet(responseWriter http.ResponseWriter, request *http.Request) 
 		result.WriteErrorResponse(responseWriter, decodeErr)
 		return
 	}
-	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
-	if confErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
+	sheetConf, sheetConfErr := google.JWTConfigFromJSON(decodedJSON, SheetScope)
+	if sheetConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetConfErr.Error())
 		return
 	}
-	client := conf.Client(context.TODO())
 
-	service := spreadsheet.NewServiceWithClient(client)
+	sheetClient := sheetConf.Client(context.TODO())
 
-	spreadsheet, err := service.FetchSpreadsheet(argsdata.ID)
-	if err != nil {
-		result.WriteErrorResponse(responseWriter, err)
+	sheetService, sheetServiceErr := sheetsV4.New(sheetClient)
+	if sheetServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetServiceErr.Error())
+		return
+	}
+
+	getSpreadsheet := sheetService.Spreadsheets.Get(argsdata.ID)
+	spreadsheet, sheetErr := getSpreadsheet.Do()
+	if sheetErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetErr.Error())
 		return
 	}
 
 	bytes, _ := json.Marshal(spreadsheet)
-	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
 }
 
 //AddSheet func
@@ -129,35 +243,42 @@ func AddSheet(responseWriter http.ResponseWriter, request *http.Request) {
 		result.WriteErrorResponse(responseWriter, decodeErr)
 		return
 	}
-	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
-	if confErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
-		return
-	}
-	client := conf.Client(context.TODO())
 
-	service := spreadsheet.NewServiceWithClient(client)
-
-	currentSpreadsheet, err := service.FetchSpreadsheet(argsdata.ID)
-	if err != nil {
-		result.WriteErrorResponse(responseWriter, err)
+	sheetConf, sheetConfErr := google.JWTConfigFromJSON(decodedJSON, SheetScope)
+	if sheetConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetConfErr.Error())
 		return
 	}
 
-	var sheetProperties spreadsheet.SheetProperties
-	sheetProperties.Title = argsdata.SheetTitle
+	sheetClient := sheetConf.Client(context.TODO())
 
-	addSheetErr := service.AddSheet(&currentSpreadsheet, sheetProperties)
-	if addSheetErr != nil {
-		message := Message{false, addSheetErr.Error(), http.StatusBadRequest}
-		bytes, _ := json.Marshal(message)
-		result.WriteJsonResponse(responseWriter, bytes, http.StatusBadRequest)
+	sheetService, sheetServiceErr := sheetsV4.New(sheetClient)
+	if sheetServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetServiceErr.Error())
 		return
 	}
 
-	message := Message{true, "Sheet added successfully", http.StatusOK}
-	bytes, _ := json.Marshal(message)
-	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
+	addSheet := sheetsV4.BatchUpdateSpreadsheetRequest{
+		Requests: []*sheetsV4.Request{
+			&sheetsV4.Request{
+				AddSheet: &sheetsV4.AddSheetRequest{
+					Properties: &sheetsV4.SheetProperties{
+						Title: argsdata.SheetTitle,
+					},
+				},
+			},
+		},
+	}
+
+	addSpreadsheet := sheetService.Spreadsheets.BatchUpdate(argsdata.ID, &addSheet)
+	spreadsheet, sheetErr := addSpreadsheet.Do()
+	if sheetErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetErr.Error())
+		return
+	}
+
+	bytes, _ := json.Marshal(spreadsheet)
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
 }
 
 //FindSheet func
@@ -177,7 +298,7 @@ func FindSheet(responseWriter http.ResponseWriter, request *http.Request) {
 	if argsdata.SheetID <= 0 && argsdata.SheetIndex <= 0 && argsdata.SheetTitle == "" {
 		message := Message{false, "Please provide at least one argument(sheet Id, title or index)", http.StatusBadRequest}
 		bytes, _ := json.Marshal(message)
-		result.WriteJsonResponse(responseWriter, bytes, http.StatusBadRequest)
+		result.WriteJSONResponse(responseWriter, bytes, http.StatusBadRequest)
 		return
 	}
 
@@ -186,36 +307,30 @@ func FindSheet(responseWriter http.ResponseWriter, request *http.Request) {
 		result.WriteErrorResponse(responseWriter, decodeErr)
 		return
 	}
-	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
-	if confErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
-		return
-	}
-	client := conf.Client(context.TODO())
 
-	service := spreadsheet.NewServiceWithClient(client)
-
-	currentSpreadsheet, err := service.FetchSpreadsheet(argsdata.ID)
-	if err != nil {
-		result.WriteErrorResponse(responseWriter, err)
+	sheetConf, sheetConfErr := google.JWTConfigFromJSON(decodedJSON, SheetScope)
+	if sheetConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetConfErr.Error())
 		return
 	}
 
-	var sheet *spreadsheet.Sheet
-	var sheetErr error
-	if argsdata.SheetID > 0 {
-		sheet, sheetErr = currentSpreadsheet.SheetByID(uint(argsdata.SheetID))
-	} else if argsdata.SheetIndex > 0 {
-		sheet, sheetErr = currentSpreadsheet.SheetByIndex(uint(argsdata.SheetIndex))
-	} else if argsdata.SheetTitle != "" {
-		sheet, sheetErr = currentSpreadsheet.SheetByTitle(argsdata.SheetTitle)
-	} else if sheetErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
+	sheetClient := sheetConf.Client(context.TODO())
+
+	sheetService, sheetServiceErr := sheetsV4.New(sheetClient)
+	if sheetServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetServiceErr.Error())
+		return
+	}
+
+	getSheet := sheetService.Spreadsheets.Values.Get(argsdata.ID, argsdata.SheetTitle)
+	sheet, sheetErr := getSheet.Do()
+	if sheetErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetErr.Error())
 		return
 	}
 
 	bytes, _ := json.Marshal(sheet)
-	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
 }
 
 //UpdateSheetSize func
@@ -237,32 +352,49 @@ func UpdateSheetSize(responseWriter http.ResponseWriter, request *http.Request) 
 		result.WriteErrorResponse(responseWriter, decodeErr)
 		return
 	}
-	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
-	if confErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
-		return
-	}
-	client := conf.Client(context.TODO())
 
-	service := spreadsheet.NewServiceWithClient(client)
-
-	currentSpreadsheet, err := service.FetchSpreadsheet(argsdata.ID)
-	if err != nil {
-		result.WriteErrorResponse(responseWriter, err)
+	sheetConf, sheetConfErr := google.JWTConfigFromJSON(decodedJSON, SheetScope)
+	if sheetConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetConfErr.Error())
 		return
 	}
 
-	sheet, sheetErr := currentSpreadsheet.SheetByTitle(argsdata.SheetTitle)
+	sheetClient := sheetConf.Client(context.TODO())
+
+	sheetService, sheetServiceErr := sheetsV4.New(sheetClient)
+	if sheetServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetServiceErr.Error())
+		return
+	}
+
+	resizeValues := sheetsV4.BatchUpdateSpreadsheetRequest{
+		Requests: []*sheetsV4.Request{
+			&sheetsV4.Request{
+				AppendDimension: &sheetsV4.AppendDimensionRequest{
+					Length:    argsdata.Row,
+					Dimension: "ROWS",
+					SheetId:   argsdata.SheetID,
+				},
+			},
+			&sheetsV4.Request{
+				AppendDimension: &sheetsV4.AppendDimensionRequest{
+					Length:    argsdata.Column,
+					Dimension: "COLUMNS",
+					SheetId:   argsdata.SheetID,
+				},
+			},
+		},
+	}
+
+	resizeSheet := sheetService.Spreadsheets.BatchUpdate(argsdata.ID, &resizeValues)
+	sheet, sheetErr := resizeSheet.Do()
 	if sheetErr != nil {
-		result.WriteErrorResponse(responseWriter, sheetErr)
+		result.WriteErrorResponseString(responseWriter, sheetErr.Error())
 		return
 	}
 
-	service.ExpandSheet(sheet, uint(argsdata.Row), uint(argsdata.Column))
-
-	message := Message{true, "Sheet expanded successfully", http.StatusOK}
-	bytes, _ := json.Marshal(message)
-	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
+	bytes, _ := json.Marshal(sheet)
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
 }
 
 //UpdateCell func
@@ -284,95 +416,35 @@ func UpdateCell(responseWriter http.ResponseWriter, request *http.Request) {
 		result.WriteErrorResponse(responseWriter, decodeErr)
 		return
 	}
-	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
-	if confErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
-		return
-	}
-	client := conf.Client(context.TODO())
-
-	service := spreadsheet.NewServiceWithClient(client)
-
-	currentSpreadsheet, err := service.FetchSpreadsheet(argsdata.ID)
-	if err != nil {
-		result.WriteErrorResponse(responseWriter, err)
+	sheetConf, sheetConfErr := google.JWTConfigFromJSON(decodedJSON, SheetScope)
+	if sheetConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetConfErr.Error())
 		return
 	}
 
-	sheet, sheetErr := currentSpreadsheet.SheetByTitle(argsdata.SheetTitle)
+	sheetClient := sheetConf.Client(context.TODO())
+
+	sheetService, sheetServiceErr := sheetsV4.New(sheetClient)
+	if sheetServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetServiceErr.Error())
+		return
+	}
+
+	writeProp := sheetsV4.ValueRange{
+		MajorDimension: "ROWS",
+		Values:         [][]interface{}{{argsdata.Content}},
+	}
+
+	writeSheet := sheetService.Spreadsheets.Values.Update(argsdata.ID, argsdata.SheetTitle+"!"+argsdata.CellNumber, &writeProp)
+	writeSheet.ValueInputOption("USER_ENTERED")
+	sheet, sheetErr := writeSheet.Do()
 	if sheetErr != nil {
-		result.WriteErrorResponse(responseWriter, sheetErr)
+		result.WriteErrorResponseString(responseWriter, sheetErr.Error())
 		return
 	}
 
-	sheet.Update(argsdata.Row, argsdata.Column, argsdata.Content)
-
-	syncErr := sheet.Synchronize()
-	if syncErr != nil {
-		result.WriteErrorResponse(responseWriter, syncErr)
-		return
-	}
-
-	contentMessage := fmt.Sprintf("Cell row[%d]column[%d] updated successfully with content '%s'", argsdata.Row, argsdata.Column, argsdata.Content)
-
-	message := Message{true, contentMessage, http.StatusOK}
-	bytes, _ := json.Marshal(message)
-	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
-}
-
-//GetCell func
-func GetCell(responseWriter http.ResponseWriter, request *http.Request) {
-
-	var key = os.Getenv("KEY")
-
-	decoder := json.NewDecoder(request.Body)
-
-	var argsdata ArgsData
-	decodeErr := decoder.Decode(&argsdata)
-	if decodeErr != nil {
-		result.WriteErrorResponse(responseWriter, decodeErr)
-		return
-	}
-
-	decodedJSON, decodeErr := base64.StdEncoding.DecodeString(key)
-	if decodeErr != nil {
-		result.WriteErrorResponse(responseWriter, decodeErr)
-		return
-	}
-	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
-	if confErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
-		return
-	}
-	client := conf.Client(context.TODO())
-
-	service := spreadsheet.NewServiceWithClient(client)
-
-	currentSpreadsheet, err := service.FetchSpreadsheet(argsdata.ID)
-	if err != nil {
-		result.WriteErrorResponse(responseWriter, err)
-		return
-	}
-
-	sheet, sheetErr := currentSpreadsheet.SheetByTitle(argsdata.SheetTitle)
-	if sheetErr != nil {
-		result.WriteErrorResponse(responseWriter, sheetErr)
-		return
-	}
-
-	value := sheet.Rows[argsdata.Row][argsdata.Column].Value
-
-	syncErr := sheet.Synchronize()
-	if syncErr != nil {
-		result.WriteErrorResponse(responseWriter, syncErr)
-		return
-	}
-
-	contentMessage := fmt.Sprintf("Cell row[%d]column[%d] contains '%s'", argsdata.Row, argsdata.Column, value)
-
-	message := Message{true, contentMessage, http.StatusOK}
-	bytes, _ := json.Marshal(message)
-	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
+	bytes, _ := json.Marshal(sheet)
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
 }
 
 //DeleteSheet func
@@ -394,30 +466,234 @@ func DeleteSheet(responseWriter http.ResponseWriter, request *http.Request) {
 		result.WriteErrorResponse(responseWriter, decodeErr)
 		return
 	}
-	conf, confErr := google.JWTConfigFromJSON(decodedJSON, spreadsheet.Scope)
-	if confErr != nil {
-		result.WriteErrorResponse(responseWriter, confErr)
-		return
-	}
-	client := conf.Client(context.TODO())
 
-	service := spreadsheet.NewServiceWithClient(client)
-
-	currentSpreadsheet, err := service.FetchSpreadsheet(argsdata.ID)
-	if err != nil {
-		result.WriteErrorResponse(responseWriter, err)
+	sheetConf, sheetConfErr := google.JWTConfigFromJSON(decodedJSON, SheetScope)
+	if sheetConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetConfErr.Error())
 		return
 	}
 
-	deleteErr := service.DeleteSheet(&currentSpreadsheet, uint(argsdata.SheetID))
-	if deleteErr != nil {
-		message := Message{false, deleteErr.Error(), http.StatusBadRequest}
-		bytes, _ := json.Marshal(message)
-		result.WriteJsonResponse(responseWriter, bytes, http.StatusBadRequest)
+	sheetClient := sheetConf.Client(context.TODO())
+
+	sheetService, sheetServiceErr := sheetsV4.New(sheetClient)
+	if sheetServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetServiceErr.Error())
+		return
+	}
+
+	deleteProperties := sheetsV4.BatchUpdateSpreadsheetRequest{
+		Requests: []*sheetsV4.Request{
+			&sheetsV4.Request{
+				DeleteSheet: &sheetsV4.DeleteSheetRequest{
+					SheetId: argsdata.SheetID,
+				},
+			},
+		},
+	}
+
+	deleteSheet := sheetService.Spreadsheets.BatchUpdate(argsdata.ID, &deleteProperties)
+	_, sheetErr := deleteSheet.Do()
+	if sheetErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetErr.Error())
 		return
 	}
 
 	message := Message{true, "Sheet deleted successfully", http.StatusOK}
 	bytes, _ := json.Marshal(message)
-	result.WriteJsonResponse(responseWriter, bytes, http.StatusOK)
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
+}
+
+//SheetSubscribe func
+func SheetSubscribe(responseWriter http.ResponseWriter, request *http.Request) {
+
+	var key = os.Getenv("KEY")
+
+	decodedJSON, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		result.WriteErrorResponseString(responseWriter, err.Error())
+		return
+	}
+
+	decoder := json.NewDecoder(request.Body)
+
+	var sub Subscribe
+	decodeError := decoder.Decode(&sub)
+	if decodeError != nil {
+		result.WriteErrorResponseString(responseWriter, decodeError.Error())
+		return
+	}
+
+	sheetConf, sheetConfErr := google.JWTConfigFromJSON(decodedJSON, SheetScope)
+	if sheetConfErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetConfErr.Error())
+		return
+	}
+
+	sheetClient := sheetConf.Client(context.TODO())
+
+	sheetService, sheetServiceErr = sheetsV4.New(sheetClient)
+	if sheetServiceErr != nil {
+		result.WriteErrorResponseString(responseWriter, sheetServiceErr.Error())
+		return
+	}
+
+	Listener[sub.Data.SpreadsheetID] = sub
+	if !rtmStarted {
+		go SheetRTM()
+		rtmStarted = true
+	}
+
+	bytes, _ := json.Marshal("Subscribed")
+	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
+}
+
+//SheetRTM func
+func SheetRTM() {
+	isTest := false
+	for {
+		if len(Listener) > 0 {
+			for k, v := range Listener {
+				go getNewRowUpdate(k, v)
+				isTest = v.IsTesting
+			}
+		} else {
+			rtmStarted = false
+			break
+		}
+		time.Sleep(10 * time.Second)
+		if isTest {
+			break
+		}
+	}
+}
+
+func getNewRowUpdate(spreadsheetID string, sub Subscribe) {
+
+	subReturn.SpreadsheetID = spreadsheetID
+	subReturn.SheetTitle = sub.Data.SheetTitle
+
+	readSheet := sheetService.Spreadsheets.Values.Get(spreadsheetID, sub.Data.SheetTitle)
+	sheet, readSheetErr := readSheet.Do()
+	if readSheetErr != nil {
+		fmt.Println("Read Sheet error: ", readSheetErr)
+		return
+	}
+
+	currentRowCount := len(sheet.Values)
+
+	getHeadingOfColumns := sheetService.Spreadsheets.Values.Get(spreadsheetID, sub.Data.SheetTitle+"!A1:Z100")
+	heading, getHeadingOfColumnsErr := getHeadingOfColumns.Do()
+	if getHeadingOfColumnsErr != nil {
+		fmt.Println("Featching heading error: ", getHeadingOfColumnsErr)
+		return
+	}
+
+	headingList := heading.Values
+	extractedList := headingList[0]
+
+	for index, value := range extractedList {
+		columnContent := fmt.Sprintf("%v", value)
+
+		if strings.EqualFold(columnContent, "twitter") {
+			twitterIndex = index + 1
+			letter := toCharStr(twitterIndex)
+			subReturn.TwitterCell = letter + strconv.FormatInt(int64(currentRowCount), 10)
+		}
+	}
+
+	if currentRowCount == 2 {
+
+		readSheet := sheetService.Spreadsheets.Values.Get(spreadsheetID, sub.Data.SheetTitle+"!A2:Z100")
+		sheet, readSheetErr := readSheet.Do()
+		if readSheetErr != nil {
+			fmt.Println("Read sheet error:", readSheetErr)
+			return
+		}
+
+		list := sheet.Values
+		extractedList := list[0]
+
+		for _, v := range extractedList {
+			columnContent := fmt.Sprintf("%v", v)
+			match, _ := regexp.MatchString("^\\w+([-+.']\\w+)*@[A-Za-z\\d]+\\.com$", columnContent)
+			if match {
+				subReturn.EmailAddress = columnContent
+				columnContent = ""
+			}
+		}
+
+	} else if currentRowCount > 2 {
+
+		sheetRange := sub.Data.SheetTitle + "!A" + strconv.FormatInt(int64(currentRowCount), 10) + ":Z100"
+		readSheet := sheetService.Spreadsheets.Values.Get(spreadsheetID, sheetRange)
+		sheet, sheetErr := readSheet.Do()
+		if sheetErr != nil {
+			fmt.Println("Read sheet error : ", sheetErr)
+			return
+		}
+
+		list := sheet.Values
+		extractedList := list[0]
+
+		for _, v := range extractedList {
+			columnContent := fmt.Sprintf("%v", v)
+			match, _ := regexp.MatchString("^\\w+([-+.']\\w+)*@[A-Za-z\\d]+\\.com$", columnContent)
+			if match {
+				subReturn.EmailAddress = columnContent
+				columnContent = ""
+			}
+		}
+	}
+
+	contentType := "application/json"
+	s1 := strings.Split(sub.Endpoint, "//")
+	_, ip := s1[0], s1[1]
+	s := strings.Split(ip, ":")
+	_, port := s[0], s[1]
+	sub.Endpoint = "http://192.168.0.61:" + string(port)
+
+	t, err := cloudevents.NewHTTPTransport(cloudevents.WithTarget(sub.Endpoint), cloudevents.WithStructuredEncoding())
+	if err != nil {
+		fmt.Println("failed to create transport : ", err)
+		return
+	}
+
+	c, err := cloudevents.NewClient(t, cloudevents.WithTimeNow())
+	if err != nil {
+		fmt.Println("failed to create client : ", err)
+		return
+	}
+
+	source, err := url.Parse(sub.Endpoint)
+	event := cloudevents.Event{
+		Context: cloudevents.EventContextV01{
+			EventID:     sub.ID,
+			EventType:   "listener",
+			Source:      cloudevents.URLRef{URL: *source},
+			ContentType: &contentType,
+		}.AsV01(),
+		Data: subReturn,
+	}
+
+	if oldRowCount == 0 || oldRowCount < currentRowCount {
+		oldRowCount = currentRowCount
+		_, resp, err := c.Send(context.Background(), event)
+		if err != nil {
+			log.Printf("failed to send: %v", err)
+		}
+
+		//subReturn = SubscribeReturn{}
+
+		subReturn.EmailAddress = ""
+		subReturn.SheetTitle = ""
+		subReturn.SpreadsheetID = ""
+		subReturn.TwitterCell = ""
+
+		fmt.Printf("Response1: \n%s\n", resp)
+	}
+
+}
+
+func toCharStr(i int) string {
+	return string('A' - 1 + i)
 }
