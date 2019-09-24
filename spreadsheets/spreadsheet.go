@@ -677,8 +677,6 @@ func getNewRowUpdate(spreadsheetID string, sub Subscribe) {
 			log.Printf("failed to send: %v", err)
 		}
 
-		//subReturn = SubscribeReturn{}
-
 		subReturn.EmailAddress = ""
 		subReturn.SheetTitle = ""
 		subReturn.SpreadsheetID = ""
