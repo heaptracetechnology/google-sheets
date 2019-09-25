@@ -120,11 +120,11 @@ actions:
         in: requestBody
         required: true
         help: The ID of spreadsheet.
-      sheetTitle: 
-        type: string
+      sheetId: 
+        type: int
         in: requestBody
         required: true
-        help: The title of sheet.
+        help: The ID of sheet.
       row: 
         type: int
         in: requestBody

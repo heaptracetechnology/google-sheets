@@ -26,7 +26,7 @@ google-sheets findSheet spreadsheetId:'Spreadsheet Id' sheetTitle:'Sheet title'
 ```
 ##### Update Sheet Size
 ```coffee
-google-sheets updateSheetSize spreadsheetId:'Spreadsheet Id' sheetTitle:'Sheet title' row:1 column:2
+google-sheets updateSheetSize spreadsheetId:'Spreadsheet Id' sheetId:'Sheet Id' row:1 column:2
 ```
 ##### Update Cell
 ```coffee
@@ -65,7 +65,7 @@ $ omg run findSheet -a spreadsheetId=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE
 ```
 ##### Update Sheet Size
 ```shell
-$ omg run updateSheetSize -a spreadsheetId=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -a row=<ROW_LENGTH> -a column=<COLUMN_LENGTH> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run updateSheetSize -a spreadsheetId=<SPREADSHEET_ID> -a sheetId=<SHEET_ID> -a row=<ROW_LENGTH> -a column=<COLUMN_LENGTH> -e KEY=<BASE64_DATA_OF_KEY_FILE>
 ```
 ##### Update Cell
 ```shell
