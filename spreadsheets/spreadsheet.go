@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	//"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -47,7 +46,6 @@ type Subscribe struct {
 	Endpoint  string       `json:"endpoint"`
 	ID        string       `json:"id"`
 	IsTesting bool         `json:"istesting"`
-	//LastMessageID uint32
 }
 
 //SubscribeReturn struct
@@ -86,6 +84,7 @@ var (
 	oldRowCount     int
 	twitterIndex    int
 	subReturn       SubscribeReturn
+	count           int
 )
 
 //HealthCheck Google-Sheets
@@ -98,7 +97,7 @@ func HealthCheck(responseWriter http.ResponseWriter, request *http.Request) {
 //CreateSpreadsheet func
 func CreateSpreadsheet(responseWriter http.ResponseWriter, request *http.Request) {
 
-	var key = os.Getenv("KEY")
+	var key = os.Getenv("CREDENTIAL_JSON")
 
 	decodedJSON, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
@@ -183,7 +182,7 @@ func CreateSpreadsheet(responseWriter http.ResponseWriter, request *http.Request
 //FindSpreadsheet func
 func FindSpreadsheet(responseWriter http.ResponseWriter, request *http.Request) {
 
-	var key = os.Getenv("KEY")
+	var key = os.Getenv("CREDENTIAL_JSON")
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -227,7 +226,7 @@ func FindSpreadsheet(responseWriter http.ResponseWriter, request *http.Request) 
 //AddSheet func
 func AddSheet(responseWriter http.ResponseWriter, request *http.Request) {
 
-	var key = os.Getenv("KEY")
+	var key = os.Getenv("CREDENTIAL_JSON")
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -284,7 +283,7 @@ func AddSheet(responseWriter http.ResponseWriter, request *http.Request) {
 //FindSheet func
 func FindSheet(responseWriter http.ResponseWriter, request *http.Request) {
 
-	var key = os.Getenv("KEY")
+	var key = os.Getenv("CREDENTIAL_JSON")
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -336,7 +335,7 @@ func FindSheet(responseWriter http.ResponseWriter, request *http.Request) {
 //UpdateSheetSize func
 func UpdateSheetSize(responseWriter http.ResponseWriter, request *http.Request) {
 
-	var key = os.Getenv("KEY")
+	var key = os.Getenv("CREDENTIAL_JSON")
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -400,7 +399,7 @@ func UpdateSheetSize(responseWriter http.ResponseWriter, request *http.Request) 
 //UpdateCell func
 func UpdateCell(responseWriter http.ResponseWriter, request *http.Request) {
 
-	var key = os.Getenv("KEY")
+	var key = os.Getenv("CREDENTIAL_JSON")
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -450,7 +449,7 @@ func UpdateCell(responseWriter http.ResponseWriter, request *http.Request) {
 //DeleteSheet func
 func DeleteSheet(responseWriter http.ResponseWriter, request *http.Request) {
 
-	var key = os.Getenv("KEY")
+	var key = os.Getenv("CREDENTIAL_JSON")
 
 	decoder := json.NewDecoder(request.Body)
 
@@ -506,7 +505,7 @@ func DeleteSheet(responseWriter http.ResponseWriter, request *http.Request) {
 //SheetSubscribe func
 func SheetSubscribe(responseWriter http.ResponseWriter, request *http.Request) {
 
-	var key = os.Getenv("KEY")
+	var key = os.Getenv("CREDENTIAL_JSON")
 
 	decodedJSON, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
@@ -581,110 +580,76 @@ func getNewRowUpdate(spreadsheetID string, sub Subscribe) {
 
 	currentRowCount := len(sheet.Values)
 
-	getHeadingOfColumns := sheetService.Spreadsheets.Values.Get(spreadsheetID, sub.Data.SheetTitle+"!A1:Z100")
-	heading, getHeadingOfColumnsErr := getHeadingOfColumns.Do()
-	if getHeadingOfColumnsErr != nil {
-		fmt.Println("Featching heading error: ", getHeadingOfColumnsErr)
-		return
-	}
+	if currentRowCount > 0 {
 
-	headingList := heading.Values
-	extractedList := headingList[0]
+		sheetData := sheet.Values
+		columnHeading := sheetData[0]
 
-	for index, value := range extractedList {
-		columnContent := fmt.Sprintf("%v", value)
+		for index, value := range columnHeading {
+			columnContent := fmt.Sprintf("%v", value)
 
-		if strings.EqualFold(columnContent, "twitter") {
-			twitterIndex = index + 1
-			letter := toCharStr(twitterIndex)
-			subReturn.TwitterCell = letter + strconv.FormatInt(int64(currentRowCount), 10)
-		}
-	}
-
-	if currentRowCount == 2 {
-
-		readSheet := sheetService.Spreadsheets.Values.Get(spreadsheetID, sub.Data.SheetTitle+"!A2:Z100")
-		sheet, readSheetErr := readSheet.Do()
-		if readSheetErr != nil {
-			fmt.Println("Read sheet error:", readSheetErr)
-			return
-		}
-
-		list := sheet.Values
-		extractedList := list[0]
-
-		for _, v := range extractedList {
-			columnContent := fmt.Sprintf("%v", v)
-			match, _ := regexp.MatchString("^\\w+([-+.']\\w+)*@[A-Za-z\\d]+\\.com$", columnContent)
-			if match {
-				subReturn.EmailAddress = columnContent
-				columnContent = ""
+			if strings.EqualFold(columnContent, "twitter") {
+				twitterIndex = index + 1
+				letter := toCharStr(twitterIndex)
+				subReturn.TwitterCell = letter + strconv.FormatInt(int64(currentRowCount), 10)
 			}
 		}
 
-	} else if currentRowCount > 2 {
+		if currentRowCount >= 2 {
 
-		sheetRange := sub.Data.SheetTitle + "!A" + strconv.FormatInt(int64(currentRowCount), 10) + ":Z100"
-		readSheet := sheetService.Spreadsheets.Values.Get(spreadsheetID, sheetRange)
-		sheet, sheetErr := readSheet.Do()
-		if sheetErr != nil {
-			fmt.Println("Read sheet error : ", sheetErr)
-			return
-		}
+			list := sheet.Values
+			extractedList := list[currentRowCount-1]
 
-		list := sheet.Values
-		extractedList := list[0]
-
-		for _, v := range extractedList {
-			columnContent := fmt.Sprintf("%v", v)
-			match, _ := regexp.MatchString("^\\w+([-+.']\\w+)*@[A-Za-z\\d]+\\.com$", columnContent)
-			if match {
-				subReturn.EmailAddress = columnContent
-				columnContent = ""
+			for _, v := range extractedList {
+				columnContent := fmt.Sprintf("%v", v)
+				match, _ := regexp.MatchString("^\\w+([-+.']\\w+)*@[A-Za-z\\d]+\\.com$", columnContent)
+				if match {
+					subReturn.EmailAddress = columnContent
+				}
 			}
 		}
-	}
 
-	contentType := "application/json"
+		contentType := "application/json"
 
-	t, err := cloudevents.NewHTTPTransport(cloudevents.WithTarget(sub.Endpoint), cloudevents.WithStructuredEncoding())
-	if err != nil {
-		fmt.Println("failed to create transport : ", err)
-		return
-	}
-
-	c, err := cloudevents.NewClient(t, cloudevents.WithTimeNow())
-	if err != nil {
-		fmt.Println("failed to create client : ", err)
-		return
-	}
-
-	source, err := url.Parse(sub.Endpoint)
-	event := cloudevents.Event{
-		Context: cloudevents.EventContextV01{
-			EventID:     sub.ID,
-			EventType:   "listener",
-			Source:      cloudevents.URLRef{URL: *source},
-			ContentType: &contentType,
-		}.AsV01(),
-		Data: subReturn,
-	}
-
-	if oldRowCount == 0 || oldRowCount < currentRowCount {
-		oldRowCount = currentRowCount
-		_, resp, err := c.Send(context.Background(), event)
+		transport, err := cloudevents.NewHTTPTransport(cloudevents.WithTarget(sub.Endpoint), cloudevents.WithStructuredEncoding())
 		if err != nil {
-			log.Printf("failed to send: %v", err)
+			fmt.Println("failed to create transport : ", err)
+			return
 		}
 
-		subReturn.EmailAddress = ""
-		subReturn.SheetTitle = ""
-		subReturn.SpreadsheetID = ""
-		subReturn.TwitterCell = ""
+		client, err := cloudevents.NewClient(transport, cloudevents.WithTimeNow())
+		if err != nil {
+			fmt.Println("failed to create client : ", err)
+			return
+		}
 
-		fmt.Printf("Response1: \n%s\n", resp)
+		source, err := url.Parse(sub.Endpoint)
+		event := cloudevents.Event{
+			Context: cloudevents.EventContextV01{
+				EventID:     sub.ID,
+				EventType:   "listener",
+				Source:      cloudevents.URLRef{URL: *source},
+				ContentType: &contentType,
+			}.AsV01(),
+			Data: subReturn,
+		}
+
+		if (oldRowCount == 0 || oldRowCount < currentRowCount) && currentRowCount >= 2 {
+
+			oldRowCount = currentRowCount
+			_, resp, err := client.Send(context.Background(), event)
+			if err != nil {
+				log.Printf("failed to send: %v", err)
+			}
+
+			subReturn.EmailAddress = ""
+			subReturn.SheetTitle = ""
+			subReturn.SpreadsheetID = ""
+			subReturn.TwitterCell = ""
+
+			fmt.Printf("Response: \n%s\n", resp)
+		}
 	}
-
 }
 
 func toCharStr(i int) string {

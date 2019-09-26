@@ -191,18 +191,15 @@ actions:
       type: map
       contentType: application/json
   listener:
-    help: Start receiving newly added card details from board list.
+    help: Listening to provided sheet ID and sheet title for new row updated.
     events:
       newRowUpdate:
-        help: Triggered anytime when any new card is added in list.
+        help: Triggered any new row is added.
         http: 
           port: 3000
           subscribe:
             method: post
             path: /subscribe
-          unsubscribe:
-            method: post
-            path: /unsubscribe
         arguments:
           spreadsheetID:
             type: string
@@ -218,8 +215,8 @@ actions:
           contentType: application/json
           type: map
 environment:
-  KEY:
+  CREDENTIAL_JSON:
     type: string
     required: true
-    help: Base64 data of credential's key file.
+    help: Base64 data of credential.json' file.
     

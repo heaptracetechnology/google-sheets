@@ -49,35 +49,35 @@ Curious to [learn more](https://docs.storyscript.io/)?
 
 ##### Create Spreadsheet
 ```shell
-$ omg run createSpreadsheet -a title=<SPREADSHEET_TITLE> -a emailAddress=<EMAIL_ADDRESS> -a role=<ROLE_OF_ACCESS> -a type=<TYPE_OF_ACCESS> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run createSpreadsheet -a title=<SPREADSHEET_TITLE> -a emailAddress=<EMAIL_ADDRESS> -a role=<ROLE_OF_ACCESS> -a type=<TYPE_OF_ACCESS> -e CREDENTIAL_JSON=<BASE64_DATA_OF_CREDENTIAL_JSON_FILE>
 ```
 ##### Find Spreadsheet
 ```shell
-$ omg run findSpreadsheet -a spreadsheetId=<SPREADSHEET_ID> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run findSpreadsheet -a spreadsheetId=<SPREADSHEET_ID> -e CREDENTIAL_JSON=<BASE64_DATA_OF_CREDENTIAL_JSON_FILE>
 ```
 ##### Add Sheet
 ```shell
-$ omg run addSheet -a spreadsheetId=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run addSheet -a spreadsheetId=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -e CREDENTIAL_JSON=<BASE64_DATA_OF_CREDENTIAL_JSON_FILE>
 ```
 ##### Find Sheet
 ```shell
-$ omg run findSheet -a spreadsheetId=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run findSheet -a spreadsheetId=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -e CREDENTIAL_JSON=<BASE64_DATA_OF_CREDENTIAL_JSON_FILE>
 ```
 ##### Update Sheet Size
 ```shell
-$ omg run updateSheetSize -a spreadsheetId=<SPREADSHEET_ID> -a sheetId=<SHEET_ID> -a row=<ROW_LENGTH> -a column=<COLUMN_LENGTH> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run updateSheetSize -a spreadsheetId=<SPREADSHEET_ID> -a sheetId=<SHEET_ID> -a row=<ROW_LENGTH> -a column=<COLUMN_LENGTH> -e CREDENTIAL_JSON=<BASE64_DATA_OF_CREDENTIAL_JSON_FILE>
 ```
 ##### Update Cell
 ```shell
-$ omg run updateCell -a spreadsheetId=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -a cellNumber=<CELL_NUMBER> -a content=<CELL_CONTENT> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run updateCell -a spreadsheetId=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -a cellNumber=<CELL_NUMBER> -a content=<CELL_CONTENT> -e CREDENTIAL_JSON=<BASE64_DATA_OF_CREDENTIAL_JSON_FILE>
 ```
 ##### Delete Sheet
 ```shell
-$ omg run deleteSheet -a spreadsheetId=<SPREADSHEET_ID> -a sheetId=<SHEET_ID> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+$ omg run deleteSheet -a spreadsheetId=<SPREADSHEET_ID> -a sheetId=<SHEET_ID> -e CREDENTIAL_JSON=<BASE64_DATA_OF_CREDENTIAL_JSON_FILE>
 ```
 ##### Subscribe Sheet
 ```shell
-omg subscribe listener newRowUpdate -a spreadsheetID=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -e KEY=<BASE64_DATA_OF_KEY_FILE>
+omg subscribe listener newRowUpdate -a spreadsheetID=<SPREADSHEET_ID> -a sheetTitle=<SHEET_TITLE> -e CREDENTIAL_JSON=<BASE64_DATA_OF_CREDENTIAL_JSON_FILE>
 ```
 
 **Note**: the OMG CLI requires [Docker](https://docs.docker.com/install/) to be installed.

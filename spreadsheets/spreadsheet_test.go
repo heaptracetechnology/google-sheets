@@ -14,24 +14,23 @@ import (
 )
 
 var (
-	key                     = os.Getenv("GOOGLE_SHEETS_KEY")
-	spreadsheetTitle        = os.Getenv("GOOGLE_SPREADSHEET_TITLE")
-	spreadsheetID           = os.Getenv("GOOGLE_SPREADSHEET_ID")
-	addsheettitle           = os.Getenv("GOOGLE_ADD_SHEET_TITLE")
-	updateSheetRow          = os.Getenv("GOOGLE_SHEET_ROW")
-	updateSheetColumn       = os.Getenv("GOOGLE_SHEET_COLUMN")
-	updateContentSheetTitle = os.Getenv("GOOGLE_SHEET_UPDATE_CONTENT_SHEET_TITLE")
-	emailAddress            = os.Getenv("GOOGLE_SHEET_DRIVE_PERMISSION_EMAIL_ADDRESS")
-	role                    = os.Getenv("GOOGLE_SHEET_DRIVE_ROLE")
-	accessType              = os.Getenv("GOOGLE_SHEET_DRIVE_TYPE")
-	cellNumber              = os.Getenv("GOOGLE_SHEET_CELL_NUMBER")
-	cellContent             = os.Getenv("GOOGLE_SHEET_CELL_CONTENT")
+	key               = os.Getenv("GOOGLE_SHEETS_CREDENTIAL_JSON")
+	spreadsheetTitle  = os.Getenv("GOOGLE_SPREADSHEET_TITLE")
+	spreadsheetID     = os.Getenv("GOOGLE_SPREADSHEET_ID")
+	addsheettitle     = os.Getenv("GOOGLE_ADD_SHEET_TITLE")
+	updateSheetRow    = os.Getenv("GOOGLE_SHEET_ROW")
+	updateSheetColumn = os.Getenv("GOOGLE_SHEET_COLUMN")
+	emailAddress      = os.Getenv("GOOGLE_SHEET_DRIVE_PERMISSION_EMAIL_ADDRESS")
+	role              = os.Getenv("GOOGLE_SHEET_DRIVE_ROLE")
+	accessType        = os.Getenv("GOOGLE_SHEET_DRIVE_TYPE")
+	cellNumber        = os.Getenv("GOOGLE_SHEET_CELL_NUMBER")
+	cellContent       = os.Getenv("GOOGLE_SHEET_CELL_CONTENT")
 )
 
 var _ = Describe("Create Spreadsheet with invalid base64 KEY", func() {
 
 	//invalid key
-	os.Setenv("KEY", "mockKey")
+	os.Setenv("CREDENTIAL_JSON", "mockKey")
 
 	sheet := ArgsData{Title: spreadsheetTitle}
 	requestBody := new(bytes.Buffer)
@@ -59,7 +58,7 @@ var _ = Describe("Create Spreadsheet with invalid base64 KEY", func() {
 
 var _ = Describe("Create Spreadsheet without Sheet title", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := []byte(`{"status":false}`)
 	requestBody := new(bytes.Buffer)
@@ -87,9 +86,9 @@ var _ = Describe("Create Spreadsheet without Sheet title", func() {
 
 var _ = Describe("Create Spreadsheet with valid params", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
-	sheet := ArgsData{Title: spreadsheetTitle, EmailAddress: "demot636@gmail.com", Role: "writer", Type: "user"}
+	sheet := ArgsData{Title: spreadsheetTitle, EmailAddress: emailAddress, Role: role, Type: accessType}
 	requestBody := new(bytes.Buffer)
 	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
 	if jsonErr != nil {
@@ -115,7 +114,7 @@ var _ = Describe("Create Spreadsheet with valid params", func() {
 
 var _ = Describe("Find Spreadsheet with invalid base64 KEY", func() {
 
-	os.Setenv("KEY", "mockKey")
+	os.Setenv("CREDENTIAL_JSON", "mockKey")
 
 	sheet := ArgsData{ID: spreadsheetID}
 	requestBody := new(bytes.Buffer)
@@ -143,7 +142,7 @@ var _ = Describe("Find Spreadsheet with invalid base64 KEY", func() {
 
 var _ = Describe("Find Spreadsheet invalid param", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := []byte(`{"status":false}`)
 	requestBody := new(bytes.Buffer)
@@ -171,7 +170,7 @@ var _ = Describe("Find Spreadsheet invalid param", func() {
 
 var _ = Describe("Find Spreadsheet with invalid spreadsheet ID", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: "mockSpreadsheetID"}
 	requestBody := new(bytes.Buffer)
@@ -199,7 +198,7 @@ var _ = Describe("Find Spreadsheet with invalid spreadsheet ID", func() {
 
 var _ = Describe("Find Spreadsheet with valid params", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: spreadsheetID}
 	requestBody := new(bytes.Buffer)
@@ -227,7 +226,7 @@ var _ = Describe("Find Spreadsheet with valid params", func() {
 
 var _ = Describe("Add Sheet with invalid base64 KEY", func() {
 
-	os.Setenv("KEY", "mockKey")
+	os.Setenv("CREDENTIAL_JSON", "mockKey")
 
 	sheet := ArgsData{ID: spreadsheetID, SheetTitle: addsheettitle}
 	requestBody := new(bytes.Buffer)
@@ -255,7 +254,7 @@ var _ = Describe("Add Sheet with invalid base64 KEY", func() {
 
 var _ = Describe("Add Sheet without Sheet title", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := []byte(`{"status":false}`)
 	requestBody := new(bytes.Buffer)
@@ -283,7 +282,7 @@ var _ = Describe("Add Sheet without Sheet title", func() {
 
 var _ = Describe("Add Sheet with invalid spreadsheet ID", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: "mockID", Title: "mockTitle"}
 	requestBody := new(bytes.Buffer)
@@ -311,7 +310,7 @@ var _ = Describe("Add Sheet with invalid spreadsheet ID", func() {
 
 var _ = Describe("Add Sheet with valid params", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: spreadsheetID, SheetTitle: addsheettitle}
 	requestBody := new(bytes.Buffer)
@@ -339,7 +338,7 @@ var _ = Describe("Add Sheet with valid params", func() {
 
 var _ = Describe("Find Sheet with invalid base64 KEY", func() {
 
-	os.Setenv("KEY", "mockKey")
+	os.Setenv("CREDENTIAL_JSON", "mockKey")
 
 	sheet := ArgsData{ID: spreadsheetID}
 	requestBody := new(bytes.Buffer)
@@ -367,7 +366,7 @@ var _ = Describe("Find Sheet with invalid base64 KEY", func() {
 
 var _ = Describe("Find Sheet invalid param", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := []byte(`{"status":false}`)
 	requestBody := new(bytes.Buffer)
@@ -395,7 +394,7 @@ var _ = Describe("Find Sheet invalid param", func() {
 
 var _ = Describe("Find Sheet with invalid spreadsheet ID", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: "mockSpreadsheetID"}
 	requestBody := new(bytes.Buffer)
@@ -423,7 +422,7 @@ var _ = Describe("Find Sheet with invalid spreadsheet ID", func() {
 
 var _ = Describe("Find Sheet with valid params", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: spreadsheetID, SheetTitle: addsheettitle}
 	requestBody := new(bytes.Buffer)
@@ -451,7 +450,7 @@ var _ = Describe("Find Sheet with valid params", func() {
 
 var _ = Describe("Update sheet size invalid param", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := []byte(`{"status":false}`)
 	requestBody := new(bytes.Buffer)
@@ -479,7 +478,7 @@ var _ = Describe("Update sheet size invalid param", func() {
 
 var _ = Describe("Update sheet size with invalid base64 KEY", func() {
 
-	os.Setenv("KEY", "mockKey")
+	os.Setenv("CREDENTIAL_JSON", "mockKey")
 
 	sheet := ArgsData{ID: spreadsheetID}
 	requestBody := new(bytes.Buffer)
@@ -507,7 +506,7 @@ var _ = Describe("Update sheet size with invalid base64 KEY", func() {
 
 var _ = Describe("Update sheet size with invalid spreadsheet ID", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: "mockSpreadsheetID"}
 	requestBody := new(bytes.Buffer)
@@ -535,7 +534,7 @@ var _ = Describe("Update sheet size with invalid spreadsheet ID", func() {
 
 var _ = Describe("Update sheet size with invalid sheet title", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: spreadsheetID, SheetTitle: "mockInvalidTitle"}
 	requestBody := new(bytes.Buffer)
@@ -563,7 +562,7 @@ var _ = Describe("Update sheet size with invalid sheet title", func() {
 
 var _ = Describe("Update sheet size with valid params", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	row, _ := strconv.ParseInt(updateSheetRow, 10, 64)
 	column, _ := strconv.ParseInt(updateSheetColumn, 10, 64)
@@ -594,7 +593,7 @@ var _ = Describe("Update sheet size with valid params", func() {
 
 var _ = Describe("Delete sheet invalid param", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := []byte(`{"status":false}`)
 	requestBody := new(bytes.Buffer)
@@ -622,7 +621,7 @@ var _ = Describe("Delete sheet invalid param", func() {
 
 var _ = Describe("Delete sheet with invalid base64 KEY", func() {
 
-	os.Setenv("KEY", "mockKey")
+	os.Setenv("CREDENTIAL_JSON", "mockKey")
 
 	sheet := ArgsData{ID: spreadsheetID}
 	requestBody := new(bytes.Buffer)
@@ -650,7 +649,7 @@ var _ = Describe("Delete sheet with invalid base64 KEY", func() {
 
 var _ = Describe("Delete sheet with invalid spreadsheet ID", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: "mockSpreadsheetID"}
 	requestBody := new(bytes.Buffer)
@@ -678,7 +677,7 @@ var _ = Describe("Delete sheet with invalid spreadsheet ID", func() {
 
 var _ = Describe("Update cell invalid param", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := []byte(`{"status":false}`)
 	requestBody := new(bytes.Buffer)
@@ -706,7 +705,7 @@ var _ = Describe("Update cell invalid param", func() {
 
 var _ = Describe("Update cell with invalid base64 KEY", func() {
 
-	os.Setenv("KEY", "mockKey")
+	os.Setenv("CREDENTIAL_JSON", "mockKey")
 
 	sheet := ArgsData{ID: spreadsheetID}
 	requestBody := new(bytes.Buffer)
@@ -736,7 +735,7 @@ var _ = Describe("Update cell with invalid base64 KEY", func() {
 
 var _ = Describe("Update cell with valid params", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	sheet := ArgsData{ID: spreadsheetID, SheetTitle: addsheettitle, CellNumber: cellNumber, Content: cellContent}
 	requestBody := new(bytes.Buffer)
@@ -764,7 +763,7 @@ var _ = Describe("Update cell with valid params", func() {
 
 var _ = Describe("Subscribe google sheet for new row update", func() {
 
-	os.Setenv("KEY", key)
+	os.Setenv("CREDENTIAL_JSON", key)
 
 	data := RequestParam{SpreadsheetID: spreadsheetID, SheetTitle: addsheettitle}
 	sub := Subscribe{Endpoint: "https://webhook.site/3cee781d-0a87-4966-bdec-9635436294e9",
