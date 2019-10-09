@@ -386,13 +386,14 @@ func UpdateSheetSize(responseWriter http.ResponseWriter, request *http.Request) 
 	}
 
 	resizeSheet := sheetService.Spreadsheets.BatchUpdate(argsdata.ID, &resizeValues)
-	sheet, sheetErr := resizeSheet.Do()
+	_, sheetErr := resizeSheet.Do()
 	if sheetErr != nil {
 		result.WriteErrorResponseString(responseWriter, sheetErr.Error())
 		return
 	}
 
-	bytes, _ := json.Marshal(sheet)
+	message := Message{Success: true, Message: "Updated sheet size successfully", StatusCode: http.StatusOK}
+	bytes, _ := json.Marshal(message)
 	result.WriteJSONResponse(responseWriter, bytes, http.StatusOK)
 }
 

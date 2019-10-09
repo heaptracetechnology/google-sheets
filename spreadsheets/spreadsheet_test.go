@@ -27,6 +27,32 @@ var (
 	cellContent       = os.Getenv("GOOGLE_SHEET_CELL_CONTENT")
 )
 
+var _ = Describe("HealthCheck", func() {
+
+	sheet := ArgsData{}
+	requestBody := new(bytes.Buffer)
+	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
+	if jsonErr != nil {
+		log.Fatal(jsonErr)
+	}
+
+	request, err := http.NewRequest("POST", "/health", requestBody)
+	if err != nil {
+		log.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	handler := http.HandlerFunc(HealthCheck)
+	handler.ServeHTTP(recorder, request)
+
+	Describe("Health Check", func() {
+		Context("health check", func() {
+			It("Should result http.StatusOK", func() {
+				Expect(http.StatusOK).To(Equal(recorder.Code))
+			})
+		})
+	})
+})
+
 var _ = Describe("Create Spreadsheet with invalid base64 KEY", func() {
 
 	//invalid key
@@ -730,8 +756,6 @@ var _ = Describe("Update cell with invalid base64 KEY", func() {
 		})
 	})
 })
-
-//-------------------------------------------------------------------------------------------------
 
 var _ = Describe("Update cell with valid params", func() {
 
