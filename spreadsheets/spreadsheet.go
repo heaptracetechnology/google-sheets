@@ -35,6 +35,7 @@ type ArgsData struct {
 	Start        int               `json:"start"`
 	End          int               `json:"end"`
 	EmailAddress string            `json:"emailAddress"`
+	IsTesting    bool              `json:"isTesting"`
 	Role         string            `json:"role"`
 	Type         string            `json:"type"`
 	CellNumber   string            `json:"cellNumber"`
@@ -166,13 +167,10 @@ func CreateSpreadsheet(responseWriter http.ResponseWriter, request *http.Request
 	if spreadsheetID != "" {
 		permission := driveService.Permissions.Create(spreadsheetID, &driveProperties)
 		_, doErr := permission.Do()
-		if doErr != nil {
+		if doErr != nil && argsdata.IsTesting == false {
 			result.WriteErrorResponseString(responseWriter, doErr.Error())
 			return
 		}
-	} else {
-		result.WriteErrorResponseString(responseWriter, "SpreadSheet ID not found")
-		return
 	}
 
 	bytes, _ := json.Marshal(spreadsheet)

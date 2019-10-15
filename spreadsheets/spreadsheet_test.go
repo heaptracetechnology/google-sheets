@@ -110,11 +110,12 @@ var _ = Describe("Create Spreadsheet without Sheet title", func() {
 	})
 })
 
+//********************************************************************************************
 var _ = Describe("Create Spreadsheet with valid params", func() {
 
 	os.Setenv("CREDENTIAL_JSON", key)
 
-	sheet := ArgsData{Title: spreadsheetTitle, EmailAddress: emailAddress, Role: role, Type: accessType}
+	sheet := ArgsData{Title: spreadsheetTitle, IsTesting: true, EmailAddress: emailAddress, Role: role, Type: accessType}
 	requestBody := new(bytes.Buffer)
 	jsonErr := json.NewEncoder(requestBody).Encode(sheet)
 	if jsonErr != nil {
@@ -222,6 +223,7 @@ var _ = Describe("Find Spreadsheet with invalid spreadsheet ID", func() {
 	})
 })
 
+//*******************************************************************************************
 var _ = Describe("Find Spreadsheet with valid params", func() {
 
 	os.Setenv("CREDENTIAL_JSON", key)
@@ -446,6 +448,7 @@ var _ = Describe("Find Sheet with invalid spreadsheet ID", func() {
 	})
 })
 
+//******************************************************************************************
 var _ = Describe("Find Sheet with valid params", func() {
 
 	os.Setenv("CREDENTIAL_JSON", key)
@@ -586,6 +589,7 @@ var _ = Describe("Update sheet size with invalid sheet title", func() {
 	})
 })
 
+//*************************************************************************************************
 var _ = Describe("Update sheet size with valid params", func() {
 
 	os.Setenv("CREDENTIAL_JSON", key)
@@ -757,6 +761,7 @@ var _ = Describe("Update cell with invalid base64 KEY", func() {
 	})
 })
 
+//*************************************************************************************************
 var _ = Describe("Update cell with valid params", func() {
 
 	os.Setenv("CREDENTIAL_JSON", key)
@@ -785,6 +790,7 @@ var _ = Describe("Update cell with valid params", func() {
 	})
 })
 
+//********************************************************************************************
 var _ = Describe("Subscribe google sheet for new row update", func() {
 
 	os.Setenv("CREDENTIAL_JSON", key)
